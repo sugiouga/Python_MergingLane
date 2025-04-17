@@ -3,7 +3,7 @@ import component.base_vehicle as Vehicle
 # 道路クラス
 class BaseRoad:
 
-    def __init__(self, road_id, lane_number, start_positionX_m, end_positionX_m, mainlane_positionY):
+    def __init__(self, road_id, lane_number, start_positionX_m, end_positionX_m, lane_positionY):
         # 道路の物理的な特性を定義する
         self.LANEWIDTH = 3.5
 
@@ -15,9 +15,9 @@ class BaseRoad:
         self.end_positionX = end_positionX_m
         self.road_length = end_positionX_m - start_positionX_m
 
-        self.mainlane_positionY = mainlane_positionY
-        self.road_left_edge = self.mainlane_positionY + self.LANEWIDTH * (2 * lane_number - 1) /2
-        self.road_right_edge = self.mainlane_positionY - self.LANEWIDTH /2
+        self.lane_positionY = lane_positionY
+        self.road_left_edge = self.lane_positionY + self.LANEWIDTH * (2 * lane_number - 1) /2
+        self.road_right_edge = self.lane_positionY - self.LANEWIDTH /2
 
         # 道路上の車両を格納する辞書を初期化する
         # 車両のキーは車両ID、値は車両オブジェクト
@@ -47,9 +47,9 @@ class BaseRoad:
             raise ValueError(f"Vehicle with ID {vehicle_id} does not exist.")
 
     # road_positionX_mは道路の開始位置からの距離を表す
-    def add_vehicle(self, vehicle_id, road_positionX_m, velocityX_m_s):
+    def add_vehicle(self, vehicle_id, road_positionX_m, road_positionY_m, velocityX_m_s, controller):
         if vehicle_id not in self.vehicles_in_road:
-            vehicle = Vehicle(vehicle_id, self.road_id, self.start_positionX + road_positionX_m, self.mainlane_positionY, velocityX_m_s, 0, None)
+            vehicle = Vehicle(vehicle_id, self.road_id, self.start_positionX + road_positionX_m, self.lane_positionY + road_positionY_m, velocityX_m_s, 0, controller)
             self.vehicles_in_road[vehicle_id] = vehicle
         else:
             raise ValueError(f"Vehicle with ID {vehicle_id} already exists.")
@@ -59,6 +59,12 @@ class BaseRoad:
             del self.vehicles_in_road[vehicle_id]
         else:
             raise ValueError(f"Vehicle with ID {vehicle_id} does not exist.")
+
+    def update_vehicles(self):
+        # 車両の位置、速度、加速度を更新するメソッド
+        for vehicle_id, vehicle in self.vehicles_in_road.items():
+            vehicle.update()
+
 
     # 車両が道路の終端に到達したかどうかを確認するメソッド
     # 車両の位置が道路の終端位置を超えた場合、Trueを返す
@@ -70,16 +76,16 @@ class BaseRoad:
             raise ValueError(f"Vehicle with ID {vehicle_id} does not exist.")
 
 class SingleLaneRoad(BaseRoad):
-    def __init__(self, road_id, start_positionX_m, end_positionX_m, mainlane_positionY):
-        super().__init__(road_id, 1, start_positionX_m, end_positionX_m, mainlane_positionY)
+    def __init__(self, road_id, start_positionX_m, end_positionX_m, lane_positionY):
+        super().__init__(road_id, 1, start_positionX_m, end_positionX_m, lane_positionY)
 
 class DoubleLaneRoad(BaseRoad):
-    def __init__(self, road_id, start_positionX_m, end_positionX_m, mainlane_positionY):
-        super().__init__(road_id, 2, start_positionX_m, end_positionX_m, mainlane_positionY)
+    def __init__(self, road_id, start_positionX_m, end_positionX_m, lane_positionY):
+        super().__init__(road_id, 2, start_positionX_m, end_positionX_m, lane_positionY)
 
 class Lamp(BaseRoad):
-    def __init__(self, road_id, start_positionX_m, end_positionX_m, mainlane_positionY):
-        super().__init__(road_id, 2, start_positionX_m, end_positionX_m, mainlane_positionY)
-        self.mergelane_start_positionX = start_positionX_m
-        self.mergelane_end_positionX = end_positionX_m
-        self.mergelane_positionY = mainlane_positionY + self.LANEWIDTH / 2
+    def __init__(self, road_id, start_positionX_m, end_positionX_m, lane_positionY):
+        super().__init__(road_id, 2, start_positionX_m, end_positionX_m, lane_positionY)
+        self.lamp_start_positionX = start_positionX_m
+        self.lamp_lane_end_positionX = end_positionX_m
+        self.lamp_lane_positionY = lane_positionY + self.LANEWIDTH / 2
