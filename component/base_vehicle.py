@@ -1,17 +1,16 @@
-import config as Config
+import component.base_map as BaseMap
 
 # 車両クラスを定義する
-class Vehicle:
+class BaseVehicle:
 
     def __init__(self, vehicle_id, road_id, positionX_m, positionY_m, velocityX_m_s, accelerationX_m_s2, controller):
         # 車両の物理的な特性を定義する
         self.WIDTH = 1.69
         self.LENGTH = 5.25
         self.MIN_VELOCITY = 0
-        self.MAX_VELOCITY = 25
+        self.MAX_VELOCITY = 30 #60km/h : 15/s, 80km/h : 20m/s 100km/h : 25m/s
         self.MIN_ACCELERATION = -3
         self.MAX_ACCELERATION = 2
-        self.TIME_STEP = Config.TIME_STEP
 
         # IDを設定する
         self.vehicle_id = vehicle_id
@@ -36,11 +35,22 @@ class Vehicle:
     def get_road_id(self):
         return self.road_id
 
+    def get_road(self):
+        return BaseMap.get_road(self.road_id)
+
     def get_positionX(self):
         return self.positionX
 
+    def get_road_positionX(self):
+        road = self.get_road()
+        return self.positionX - road.start_positionX
+
     def get_positionY(self):
         return self.positionY
+
+    def get_road_positionY(self):
+        road = self.get_road()
+        return self.positionY - road.center_positionY
 
     def get_velocityX(self):
         return self.velocityX
@@ -74,7 +84,7 @@ class Vehicle:
         self.controller = controller
 
     # 車両の位置･速度を更新するメソッド
-    def update_vehicle(self):
+    def update(self):
         # 制御器から加速度入力を受け取る
         if self.controller is not None:
             self.controller.update()
@@ -86,13 +96,13 @@ class Vehicle:
             self.accX_input = self.MAX_ACCELERATION
 
         # ジャークを計算する
-        self.jerkX = (self.accelerationX - self.accX_input) / self.TIME_STEP
+        self.jerkX = (self.accelerationX - self.accX_input) / TIME_STEP
         # 加速度入力を受け取る
         self.accelerationX = self.accX_input
 
         # 車両の位置･速度を更新する
-        self.positionX += self.velocityX * self.TIME_STEP + 0.5 * self.accelerationX * (self.TIME_STEP ** 2)
-        self.velocityX += self.accelerationX * self.TIME_STEP
+        self.positionX += self.velocityX * TIME_STEP + 0.5 * self.accelerationX * (TIME_STEP ** 2)
+        self.velocityX += self.accelerationX * TIME_STEP
 
         # 車両の位置･速度を制限する
         if self.velocityX < self.MIN_VELOCITY:
